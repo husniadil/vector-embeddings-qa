@@ -81,6 +81,32 @@ Enter your question (or 'quit' to exit): quit
 
 ## Technical Implementation
 
+### RAG Pipeline
+```mermaid
+flowchart TD
+    Q[User Question] --> E[Convert to Embedding]
+    E --> S[Search Vector Store]
+    S --> R[Retrieve Top-k Similar Texts]
+    R --> C[Combine Context]
+    C --> L[LLM Generation]
+    L --> A[Final Answer]
+
+    subgraph Retrieval
+    S
+    R
+    C
+    end
+
+    subgraph Embedding
+    E
+    end
+
+    subgraph Generation
+    L
+    A
+    end
+```
+
 ### Key Components
 
 - **Embedding Generation**: Uses OpenAI's text-embedding-3-small model to convert text into vector representations
