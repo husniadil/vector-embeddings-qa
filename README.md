@@ -47,6 +47,38 @@ The system works by:
    - Save them for future use
    - Start an interactive question-answering session
 
+## Sample Output
+###### (with OpenRouter using google/gemini-2.0-flash-001 model)
+```bash
+(.venv) (.venv)vector-embeddings-qa ➤ python main.py
+Loading existing embeddings...
+
+Enter your question (or 'quit' to exit): who are you? who developed you?                                   
+
+Finding answer...
+
+Answer: I am a helpful assistant. I was developed by Google.
+
+
+Enter your question (or 'quit' to exit): How much has the alphabet dropped?
+
+Finding answer...
+
+Answer: Alphabet dropped 8 percent.
+
+
+Enter your question (or 'quit' to exit): summarize
+
+Finding answer...
+
+Answer: Here is a summary of the provided text:
+
+Jim Tierney of AllianceBernstein notes that the enthusiasm for the "Magnificent Seven" stocks is waning. This group, which includes Apple, Nvidia, and Tesla, significantly outspends the rest of the S&P 500, with a 40% increase in capital spending in 2024 compared to just 3.5% for the other 493 companies. Their profits also grew substantially more, at 33% versus 5% for the rest. Google is also mentioned for introducing "AI overviews" in its search results, which are displacing traditional search result links.
+
+
+Enter your question (or 'quit' to exit): quit
+```
+
 ## Technical Implementation
 
 ### Key Components
