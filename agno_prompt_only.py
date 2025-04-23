@@ -8,8 +8,8 @@ load_dotenv()
 
 
 def create_prompt_only_agent():
-    """Create a Level 0 agent - Prompt-Only Agent (Stateless LLM)
-    
+    """Create a Prompt-Only Agent (Stateless LLM)
+
     This agent only relies on prompt and response from the LLM.
     No tool calls, memory, or planning.
     Suitable for: content generation, naming, keyword suggestion, etc.
@@ -33,16 +33,18 @@ def create_prompt_only_agent():
         ],
         markdown=True,
     )
-    
+
     return agent
 
 
 def main():
-    print("Creating a Level 0 Agent - Prompt-Only Agent (Stateless LLM)...")
+    print("Creating a Prompt-Only Agent (Stateless LLM)...")
     agent = create_prompt_only_agent()
 
-    print("\n=== Level 0: Prompt-Only Agent Demo ===")
-    print("This demo shows a simple agent that only relies on prompt and response from the LLM.")
+    print("\n=== Prompt-Only Agent Demo ===")
+    print(
+        "This demo shows a simple agent that only relies on prompt and response from the LLM."
+    )
     print("No tool calls, memory, or planning.")
     print("Suitable for: content generation, naming, keyword suggestion, etc.")
     print("\nExample requests:")

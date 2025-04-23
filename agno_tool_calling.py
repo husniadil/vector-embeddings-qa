@@ -16,57 +16,59 @@ PRODUCT_DATABASE = {
         "price": 1299.99,
         "category": "Computers",
         "stock": 15,
-        "description": "High-performance laptop optimized for AI development with NVIDIA GPU"
+        "description": "High-performance laptop optimized for AI development with NVIDIA GPU",
     },
     "smart-assistant": {
         "name": "Smart Home Assistant",
         "price": 129.99,
         "category": "Smart Home",
         "stock": 45,
-        "description": "Voice-controlled smart assistant with advanced AI capabilities"
+        "description": "Voice-controlled smart assistant with advanced AI capabilities",
     },
     "ai-camera": {
         "name": "AI-Powered Security Camera",
         "price": 199.99,
         "category": "Security",
         "stock": 28,
-        "description": "Security camera with facial recognition and anomaly detection"
+        "description": "Security camera with facial recognition and anomaly detection",
     },
     "ml-toolkit": {
         "name": "Machine Learning Developer Toolkit",
         "price": 299.99,
         "category": "Software",
         "stock": 0,
-        "description": "Comprehensive software suite for machine learning development"
+        "description": "Comprehensive software suite for machine learning development",
     },
     "neural-headphones": {
         "name": "Neural Adaptive Headphones",
         "price": 249.99,
         "category": "Audio",
         "stock": 12,
-        "description": "Headphones that adapt to your listening preferences using neural networks"
-    }
+        "description": "Headphones that adapt to your listening preferences using neural networks",
+    },
 }
 
 
 @tool
 def check_product_stock(product_id: str) -> str:
     """Check the stock availability of a product.
-    
+
     Args:
         product_id: The ID of the product to check
-        
+
     Returns:
         Information about the product stock
     """
     product_id = product_id.lower().strip()
-    
+
     if product_id in PRODUCT_DATABASE:
         product = PRODUCT_DATABASE[product_id]
         stock = product["stock"]
-        
+
         if stock > 0:
-            return f"Product '{product['name']}' is in stock. Available quantity: {stock}."
+            return (
+                f"Product '{product['name']}' is in stock. Available quantity: {stock}."
+            )
         else:
             return f"Product '{product['name']}' is currently out of stock."
     else:
@@ -76,15 +78,15 @@ def check_product_stock(product_id: str) -> str:
 @tool
 def get_product_info(product_id: str) -> str:
     """Get detailed information about a product.
-    
+
     Args:
         product_id: The ID of the product to look up
-        
+
     Returns:
         Detailed information about the product
     """
     product_id = product_id.lower().strip()
-    
+
     if product_id in PRODUCT_DATABASE:
         product = PRODUCT_DATABASE[product_id]
         return json.dumps(product, indent=2)
@@ -95,20 +97,20 @@ def get_product_info(product_id: str) -> str:
 @tool
 def search_products_by_category(category: str) -> str:
     """Search for products in a specific category.
-    
+
     Args:
         category: The category to search for
-        
+
     Returns:
         List of products in the specified category
     """
     category = category.lower().strip()
-    
+
     matching_products = {}
     for product_id, product in PRODUCT_DATABASE.items():
         if product["category"].lower() == category:
             matching_products[product_id] = product
-    
+
     if matching_products:
         return json.dumps(matching_products, indent=2)
     else:
@@ -116,8 +118,8 @@ def search_products_by_category(category: str) -> str:
 
 
 def create_tool_calling_agent():
-    """Create a Level 1 agent - Tool-Calling Agent (Single-Step)
-    
+    """Create a Tool-Calling Agent (Single-Step)
+
     This agent can call a single tool (API, DB, etc.) in one step.
     No planning or context memory.
     Example: "Check stock for product X."
@@ -147,15 +149,15 @@ def create_tool_calling_agent():
         markdown=True,
         show_tool_calls=True,
     )
-    
+
     return agent
 
 
 def main():
-    print("Creating a Level 1 Agent - Tool-Calling Agent (Single-Step)...")
+    print("Creating a Tool-Calling Agent (Single-Step)...")
     agent = create_tool_calling_agent()
 
-    print("\n=== Level 1: Tool-Calling Agent Demo ===")
+    print("\n=== Tool-Calling Agent Demo ===")
     print("This demo shows an agent that can call a single tool in one step.")
     print("No planning or context memory.")
     print("Suitable for: simple information retrieval, checking status, etc.")
