@@ -3,6 +3,7 @@ import os
 import numpy as np
 from dotenv import load_dotenv
 from openai import OpenAI
+from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from agno.tools.reasoning import ReasoningTools
 
@@ -33,6 +34,9 @@ def create_embeddings(texts):
 
 def save_embeddings(texts, embeddings):
     """Save texts and their embeddings to embedding_data/embedding.json"""
+    # Create the embedding_data directory if it doesn't exist
+    os.makedirs("embedding_data", exist_ok=True)
+    
     data = {"texts": texts, "embeddings": embeddings}
     with open("embedding_data/embedding.json", "w") as f:
         json.dump(data, f)
@@ -111,10 +115,13 @@ def setup_agent():
         model=OpenAIChat(id=model_name),
         tools=[ReasoningTools(add_instructions=True), get_relevant_context],
         instructions=[
-            "You are a helpful assistant. Answer the question based on the provided context.",
+            "You are a helpful assistant specializing in AI investment information.",
+            "ALWAYS use the get_relevant_context tool for EVERY query to find information.",
+            "For general queries like 'summarize', search for 'AI investments Big Tech' to get an overview.",
+            "If the user asks about specific companies, use their names in your search.",
             "If the answer cannot be found in the context, say so.",
-            "Use the get_relevant_context tool to find information related to the user's question.",
             "Think step by step to provide accurate answers.",
+            "Always provide detailed information about AI investments when available."
         ],
         markdown=True,
         show_tool_calls=True,
