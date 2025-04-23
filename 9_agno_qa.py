@@ -3,10 +3,8 @@ import os
 import numpy as np
 from dotenv import load_dotenv
 from openai import OpenAI
-from agno.agent import Agent, RunResponse
 from agno.models.openai import OpenAIChat
 from agno.tools.reasoning import ReasoningTools
-from agno.utils.pprint import pprint_run_response
 
 # Load environment variables
 load_dotenv()
@@ -74,32 +72,30 @@ except Exception as e:
 def get_relevant_context(query: str) -> str:
     """
     Get relevant context for a query using vector search
-    
+
     Args:
         query (str): The query to search for
-        
+
     Returns:
         str: The relevant context found in the knowledge base
     """
     global stored_data
-    
+
     if stored_data is None:
         return "Error: Embeddings not loaded"
-    
+
     # Create embedding for the query
     model = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
     query_embedding_response = embedding_client.embeddings.create(
         model=model, input=query
     )
     query_embedding = query_embedding_response.data[0].embedding
-    
+
     # Find most relevant context
     relevant_texts = find_most_similar(
-        query_embedding, 
-        stored_data["embeddings"], 
-        stored_data["texts"]
+        query_embedding, stored_data["embeddings"], stored_data["texts"]
     )
-    
+
     # Create context from relevant texts
     context = "\n\n".join(relevant_texts)
     return context
@@ -109,24 +105,21 @@ def setup_agent():
     """Set up and return an Agno agent for QA"""
     # Define the model to use - use a valid OpenAI model
     model_name = "gpt-3.5-turbo"
-    
+
     # Create the agent with custom tools
     agent = Agent(
         model=OpenAIChat(id=model_name),
-        tools=[
-            ReasoningTools(add_instructions=True),
-            get_relevant_context
-        ],
+        tools=[ReasoningTools(add_instructions=True), get_relevant_context],
         instructions=[
             "You are a helpful assistant. Answer the question based on the provided context.",
             "If the answer cannot be found in the context, say so.",
             "Use the get_relevant_context tool to find information related to the user's question.",
-            "Think step by step to provide accurate answers."
+            "Think step by step to provide accurate answers.",
         ],
         markdown=True,
         show_tool_calls=True,
     )
-    
+
     return agent
 
 
