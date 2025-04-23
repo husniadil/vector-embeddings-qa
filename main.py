@@ -23,8 +23,8 @@ completion_client = OpenAI(
 
 
 def load_content():
-    """Load content from content.txt, where each line is a separate text entry"""
-    with open("content.txt", "r") as f:
+    """Load content from content_data/content.txt, where each line is a separate text entry"""
+    with open("content_data/content.txt", "r") as f:
         return [line.strip() for line in f if line.strip()]
 
 
@@ -39,15 +39,15 @@ def create_embeddings(texts):
 
 
 def save_embeddings(texts, embeddings):
-    """Save texts and their embeddings to embedding.json"""
+    """Save texts and their embeddings to embedding_data/embedding.json"""
     data = {"texts": texts, "embeddings": embeddings}
-    with open("embedding.json", "w") as f:
+    with open("embedding_data/embedding.json", "w") as f:
         json.dump(data, f)
 
 
 def load_embeddings():
-    """Load embeddings from embedding.json"""
-    with open("embedding.json", "r") as f:
+    """Load embeddings from embedding_data/embedding.json"""
+    with open("embedding_data/embedding.json", "r") as f:
         return json.load(f)
 
 
@@ -108,7 +108,7 @@ def main():
     import os.path
 
     # Check if embeddings already exist
-    if os.path.exists("embedding.json"):
+    if os.path.exists("embedding_data/embedding.json"):
         print("Loading existing embeddings...")
         stored_data = load_embeddings()
         texts = stored_data["texts"]
