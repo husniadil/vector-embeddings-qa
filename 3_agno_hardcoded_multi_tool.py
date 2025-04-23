@@ -294,7 +294,81 @@ def run_hardcoded_workflow(min_investment, agent):
     )
     search_prompt = f"Search for companies planning to invest more than {min_investment} in AI in 2025"
     search_result = agent.run(search_prompt)
+    
+    # Display the search results
+    if search_result and search_result.content:
+        print("\nSearch Results:")
+        print(search_result.content)
+        
+        # Try to parse the JSON response
+        try:
+            companies_data = json.loads(search_result.content)
+            if not companies_data:
+                print(f"No companies found with planned investments above {min_investment}.")
+                return
+                
+            # Get the first company ID from the search results
+            company_id = list(companies_data.keys())[0]
+            company_name = companies_data[company_id]["name"]
+            
+            print(f"Found company: {company_name} (ID: {company_id})")
+            
+            print(f"\nStep 2: Getting details for '{company_name}'...")
+            details_prompt = f"Get details for company {company_id}"
+            details_result = agent.run(details_prompt)
+            
+            # Display the company details
+            if details_result and details_result.content:
+                print("\nCompany Details:")
+                print(details_result.content)
+                
+                print(f"\nStep 3: Analyzing investment risks for '{company_name}'...")
+                risks_prompt = f"Analyze investment risks for {company_id}"
+                risks_result = agent.run(risks_prompt)
+                
+                # Display the risk analysis
+                if risks_result and risks_result.content:
+                    print("\nRisk Analysis:")
+                    print(risks_result.content)
+                    
+                    print(f"\nStep 4: Analyzing investment opportunities for '{company_name}'...")
+                    opportunities_prompt = f"Analyze investment opportunities for {company_id}"
+                    opportunities_result = agent.run(opportunities_prompt)
+                    
+                    # Display the opportunity analysis
+                    if opportunities_result and opportunities_result.content:
+                        print("\nOpportunity Analysis:")
+                        print(opportunities_result.content)
+                        
+                        print(f"\nStep 5: Generating investment report for '{company_name}'...")
+                        report_prompt = f"Generate investment report for {company_id} by analyst John Smith with a Hold recommendation"
+                        report_result = agent.run(report_prompt)
+                        
+                        # Display the investment report
+                        if report_result and report_result.content:
+                            print("\nInvestment Report:")
+                            print(report_result.content)
+                            
+                            print("\nWorkflow completed successfully!")
+                        else:
+                            print("Error: Could not generate investment report.")
+                    else:
+                        print("Error: Could not analyze investment opportunities.")
+                else:
+                    print("Error: Could not analyze investment risks.")
+            else:
+                print("Error: Could not get company details.")
+        except json.JSONDecodeError:
+            # Fall back to the original approach if we can't parse the JSON
+            fallback_to_database_approach(min_investment, agent)
+    else:
+        print("Error: Could not search for companies.")
+        # Fall back to the original approach
+        fallback_to_database_approach(min_investment, agent)
 
+
+def fallback_to_database_approach(min_investment, agent):
+    """Fallback method that uses the database directly if the agent response can't be parsed"""
     # Extract the first company ID directly from the database
     matching_companies = {}
     for company_id, company in COMPANY_DATABASE.items():
@@ -325,18 +399,38 @@ def run_hardcoded_workflow(min_investment, agent):
     print(f"\nStep 2: Getting details for '{company_name}'...")
     details_prompt = f"Get details for company {company_id}"
     details_result = agent.run(details_prompt)
+    
+    # Display the company details
+    if details_result and details_result.content:
+        print("\nCompany Details:")
+        print(details_result.content)
 
     print(f"\nStep 3: Analyzing investment risks for '{company_name}'...")
     risks_prompt = f"Analyze investment risks for {company_id}"
     risks_result = agent.run(risks_prompt)
+    
+    # Display the risk analysis
+    if risks_result and risks_result.content:
+        print("\nRisk Analysis:")
+        print(risks_result.content)
 
     print(f"\nStep 4: Analyzing investment opportunities for '{company_name}'...")
     opportunities_prompt = f"Analyze investment opportunities for {company_id}"
     opportunities_result = agent.run(opportunities_prompt)
+    
+    # Display the opportunity analysis
+    if opportunities_result and opportunities_result.content:
+        print("\nOpportunity Analysis:")
+        print(opportunities_result.content)
 
     print(f"\nStep 5: Generating investment report for '{company_name}'...")
     report_prompt = f"Generate investment report for {company_id} by analyst John Smith with a Hold recommendation"
     report_result = agent.run(report_prompt)
+    
+    # Display the investment report
+    if report_result and report_result.content:
+        print("\nInvestment Report:")
+        print(report_result.content)
 
     print("\nWorkflow completed successfully!")
 

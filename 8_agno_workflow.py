@@ -1,4 +1,5 @@
 import os
+from typing import Dict, Iterator, Optional
 from dotenv import load_dotenv
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
@@ -6,6 +7,9 @@ from agno.tools.reasoning import ReasoningTools
 from agno.knowledge.text import TextKnowledgeBase
 from agno.vectordb.lancedb import LanceDb
 from agno.embedder.openai import OpenAIEmbedder
+from agno.workflow import Workflow, RunResponse, RunEvent
+from agno.storage.sqlite import SqliteStorage
+from agno.utils.log import logger
 
 # Load environment variables
 load_dotenv()
@@ -13,142 +17,231 @@ load_dotenv()
 completion_model = os.getenv("COMPLETION_MODEL", "gpt-4.1-mini")
 
 
-def setup_knowledge_base():
-    """Set up a knowledge base using LanceDB and the content from content_data/content.txt"""
-    # Create the knowledge base with LanceDB as the vector database
-    knowledge_base = TextKnowledgeBase(
-        path="content_data",  # Use the content_data directory which contains content.txt
-        vector_db=LanceDb(
-            table_name="embeddings_workflow",
-            uri="sqlite_data",  # Use sqlite_data directory for database storage
-            # Use OpenAI embeddings
-            embedder=OpenAIEmbedder(
-                id=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+class AIInvestmentWorkflow(Workflow):
+    """Workflow for analyzing Big Tech AI investments using multiple specialized agents"""
+
+    description: str = """
+    An intelligent AI investment analysis workflow that creates comprehensive reports on Big Tech AI investments.
+    This workflow orchestrates multiple AI agents to research, analyze, and summarize information about
+    AI investments, providing valuable insights for decision makers.
+    """
+
+    # Research Agent: Handles information gathering from the knowledge base
+    research_agent: Agent = None
+
+    # Analysis Agent: Analyzes the research findings
+    analysis_agent: Agent = None
+
+    # Summary Agent: Creates executive summaries
+    summary_agent: Agent = None
+
+    def __init__(self, session_id: str = None, **kwargs):
+        super().__init__(session_id=session_id, **kwargs)
+
+        # Set up knowledge base
+        self.knowledge_base = self._setup_knowledge_base()
+
+        # Initialize agents
+        self.research_agent = self._create_research_agent()
+        self.analysis_agent = self._create_analysis_agent()
+        self.summary_agent = self._create_summary_agent()
+
+        # Check if we need to load the knowledge base
+        # If the vector database already exists, we can skip this step
+        if not os.path.exists("sqlite_data/embeddings_workflow"):
+            logger.info("Loading knowledge base...")
+            self.knowledge_base.load(upsert=True)
+            logger.info("Knowledge base loaded successfully!")
+        else:
+            logger.info("Using existing knowledge base.")
+
+    def _setup_knowledge_base(self):
+        """Set up a knowledge base using LanceDB and the content from content_data/content.txt"""
+        # Create the knowledge base with LanceDB as the vector database
+        knowledge_base = TextKnowledgeBase(
+            path="content_data",  # Use the content_data directory which contains content.txt
+            vector_db=LanceDb(
+                table_name="embeddings_workflow",
+                uri="sqlite_data",  # Use sqlite_data directory for database storage
+                # Use OpenAI embeddings
+                embedder=OpenAIEmbedder(
+                    id=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+                ),
             ),
-        ),
-    )
+        )
+        return knowledge_base
 
-    return knowledge_base
+    def _create_research_agent(self):
+        """Create an agent for researching information from the knowledge base"""
+        return Agent(
+            name="Research Agent",
+            model=OpenAIChat(id=completion_model),
+            knowledge=self.knowledge_base,
+            search_knowledge=True,
+            tools=[ReasoningTools()],
+            instructions=[
+                "You are a research assistant specialized in finding information about Big Tech's AI investments.",
+                "Your job is to gather relevant facts and data from the knowledge base.",
+                "Focus on extracting specific numbers, trends, and company-specific information.",
+                "Provide only factual information without analysis or opinions.",
+                "Format your response as a structured list of facts.",
+            ],
+            markdown=True,
+        )
 
+    def _create_analysis_agent(self):
+        """Create an agent for analyzing the research findings"""
+        return Agent(
+            name="Analysis Agent",
+            model=OpenAIChat(id=completion_model),
+            tools=[ReasoningTools()],
+            instructions=[
+                "You are a financial analyst specialized in tech investments.",
+                "Your job is to analyze the research findings provided to you.",
+                "Identify patterns, risks, opportunities, and implications of the AI investments.",
+                "Consider market trends, competitive positioning, and potential ROI.",
+                "Provide a structured analysis with clear sections.",
+            ],
+            markdown=True,
+        )
 
-def create_research_agent(knowledge_base):
-    """Create an agent for researching information from the knowledge base"""
-    return Agent(
-        name="Research Agent",
-        model=OpenAIChat(id=completion_model),
-        knowledge=knowledge_base,
-        search_knowledge=True,
-        tools=[ReasoningTools()],
-        instructions=[
-            "You are a research assistant specialized in finding information about Big Tech's AI investments.",
-            "Your job is to gather relevant facts and data from the knowledge base.",
-            "Focus on extracting specific numbers, trends, and company-specific information.",
-            "Provide only factual information without analysis or opinions.",
-            "Format your response as a structured list of facts.",
-        ],
-        markdown=True,
-    )
+    def _create_summary_agent(self):
+        """Create an agent for creating an executive summary"""
+        return Agent(
+            name="Summary Agent",
+            model=OpenAIChat(id=completion_model),
+            tools=[ReasoningTools()],
+            instructions=[
+                "You are an executive communication specialist.",
+                "Your job is to create a concise executive summary based on research and analysis.",
+                "Focus on the most important points that executives need to know.",
+                "Use clear, direct language and avoid technical jargon.",
+                "Keep the summary under 250 words.",
+                "Include a brief introduction, key findings, and implications.",
+            ],
+            markdown=True,
+        )
 
+    def get_cached_results(self, topic: str) -> Optional[Dict]:
+        """Get cached results for a topic if they exist"""
+        logger.info(f"Checking if cached results exist for topic: {topic}")
+        return self.session_state.get("results", {}).get(topic)
 
-def create_analysis_agent():
-    """Create an agent for analyzing the research findings"""
-    return Agent(
-        name="Analysis Agent",
-        model=OpenAIChat(id=completion_model),
-        tools=[ReasoningTools()],
-        instructions=[
-            "You are a financial analyst specialized in tech investments.",
-            "Your job is to analyze the research findings provided to you.",
-            "Identify patterns, risks, opportunities, and implications of the AI investments.",
-            "Consider market trends, competitive positioning, and potential ROI.",
-            "Provide a structured analysis with clear sections.",
-        ],
-        markdown=True,
-    )
+    def save_results_to_cache(self, topic: str, results: Dict):
+        """Save results to cache for future use"""
+        logger.info(f"Saving results for topic: {topic}")
+        self.session_state.setdefault("results", {})
+        self.session_state["results"][topic] = results
 
+    def run(self, topic: str, use_cache: bool = True) -> Iterator[RunResponse]:
+        """Run the workflow to analyze a topic"""
+        logger.info(f"Starting workflow for topic: {topic}")
 
-def create_summary_agent():
-    """Create an agent for creating an executive summary"""
-    return Agent(
-        name="Summary Agent",
-        model=OpenAIChat(id=completion_model),
-        tools=[ReasoningTools()],
-        instructions=[
-            "You are an executive communication specialist.",
-            "Your job is to create a concise executive summary based on research and analysis.",
-            "Focus on the most important points that executives need to know.",
-            "Use clear, direct language and avoid technical jargon.",
-            "Keep the summary under 250 words.",
-            "Include a brief introduction, key findings, and implications.",
-        ],
-        markdown=True,
-    )
+        # Check cache first if use_cache is True
+        if use_cache:
+            cached_results = self.get_cached_results(topic)
+            if cached_results:
+                logger.info(f"Found cached results for topic: {topic}")
+                yield RunResponse(content=cached_results, event=RunEvent.run_completed)
+                return
 
+        # Step 1: Research
+        logger.info(f"Step 1: Researching '{topic}'...")
+        yield RunResponse(
+            content=f"Researching '{topic}'...", event=RunEvent.run_started
+        )
 
-def run_workflow(topic, knowledge_base):
-    """Run a multi-step workflow to analyze a topic"""
-    print(f"\nStep 1: Researching '{topic}'...")
-    research_agent = create_research_agent(knowledge_base)
-    research_prompt = f"Find information about {topic} in Big Tech AI investments. Focus on specific numbers, trends, and company details."
-    research_response = research_agent.run(research_prompt)
+        research_prompt = f"Find information about {topic} in Big Tech AI investments. Focus on specific numbers, trends, and company details."
+        research_response = self.research_agent.run(research_prompt)
 
-    if not research_response or not research_response.content:
-        print("Error: Could not complete research step")
-        return None
+        if not research_response or not research_response.content:
+            logger.error("Could not complete research step")
+            yield RunResponse(
+                content="Error: Could not complete research step",
+                event=RunEvent.run_error,
+            )
+            return
 
-    research_findings = research_response.content
-    print("Research step completed")
+        research_findings = research_response.content
+        logger.info("Research step completed")
+        yield RunResponse(
+            content="Research step completed", event=RunEvent.run_response
+        )
 
-    print(f"\nStep 2: Analyzing research findings...")
-    analysis_agent = create_analysis_agent()
-    analysis_prompt = f"Analyze these research findings about {topic} in Big Tech AI investments:\n\n{research_findings}"
-    analysis_response = analysis_agent.run(analysis_prompt)
+        # Step 2: Analysis
+        logger.info(f"Step 2: Analyzing research findings...")
+        yield RunResponse(
+            content="Analyzing research findings...", event=RunEvent.run_response
+        )
 
-    if not analysis_response or not analysis_response.content:
-        print("Error: Could not complete analysis step")
-        return None
+        analysis_prompt = f"Analyze these research findings about {topic} in Big Tech AI investments:\n\n{research_findings}"
+        analysis_response = self.analysis_agent.run(analysis_prompt)
 
-    analysis = analysis_response.content
-    print("Analysis step completed")
+        if not analysis_response or not analysis_response.content:
+            logger.error("Could not complete analysis step")
+            yield RunResponse(
+                content="Error: Could not complete analysis step",
+                event=RunEvent.run_error,
+            )
+            return
 
-    print(f"\nStep 3: Creating executive summary...")
-    summary_agent = create_summary_agent()
-    summary_prompt = f"Create an executive summary about {topic} in Big Tech AI investments based on this research and analysis:\n\nResearch:\n{research_findings}\n\nAnalysis:\n{analysis}"
-    summary_response = summary_agent.run(summary_prompt)
+        analysis = analysis_response.content
+        logger.info("Analysis step completed")
+        yield RunResponse(
+            content="Analysis step completed", event=RunEvent.run_response
+        )
 
-    if not summary_response or not summary_response.content:
-        print("Error: Could not complete summary step")
-        return None
+        # Step 3: Summary
+        logger.info(f"Step 3: Creating executive summary...")
+        yield RunResponse(
+            content="Creating executive summary...", event=RunEvent.run_response
+        )
 
-    summary = summary_response.content
-    print("Summary step completed")
+        summary_prompt = f"Create an executive summary about {topic} in Big Tech AI investments based on this research and analysis:\n\nResearch:\n{research_findings}\n\nAnalysis:\n{analysis}"
+        summary_response = self.summary_agent.run(summary_prompt)
 
-    # Save results to files in a dedicated directory
-    os.makedirs("sqlite_data/reports", exist_ok=True)
-    with open(f"sqlite_data/reports/{topic.replace(' ', '_')}_research.md", "w") as f:
-        f.write(research_findings)
-    with open(f"sqlite_data/reports/{topic.replace(' ', '_')}_analysis.md", "w") as f:
-        f.write(analysis)
-    with open(f"sqlite_data/reports/{topic.replace(' ', '_')}_summary.md", "w") as f:
-        f.write(summary)
+        if not summary_response or not summary_response.content:
+            logger.error("Could not complete summary step")
+            yield RunResponse(
+                content="Error: Could not complete summary step",
+                event=RunEvent.run_error,
+            )
+            return
 
-    # Return all results
-    return {"research": research_findings, "analysis": analysis, "summary": summary}
+        summary = summary_response.content
+        logger.info("Summary step completed")
+        yield RunResponse(content="Summary step completed", event=RunEvent.run_response)
+
+        # Save results to files in a dedicated directory
+        os.makedirs("sqlite_data/reports", exist_ok=True)
+        with open(
+            f"sqlite_data/reports/{topic.replace(' ', '_')}_research.md", "w"
+        ) as f:
+            f.write(research_findings)
+        with open(
+            f"sqlite_data/reports/{topic.replace(' ', '_')}_analysis.md", "w"
+        ) as f:
+            f.write(analysis)
+        with open(
+            f"sqlite_data/reports/{topic.replace(' ', '_')}_summary.md", "w"
+        ) as f:
+            f.write(summary)
+
+        # Prepare results
+        results = {
+            "research": research_findings,
+            "analysis": analysis,
+            "summary": summary,
+        }
+
+        # Save to cache
+        self.save_results_to_cache(topic, results)
+
+        # Return final results
+        yield RunResponse(content=results, event=RunEvent.run_completed)
 
 
 def main():
-    print("Setting up knowledge base...")
-    knowledge_base = setup_knowledge_base()
-
-    # Check if we need to load the knowledge base
-    # If the vector database already exists, we can skip this step
-    if not os.path.exists("sqlite_data/embeddings_workflow"):
-        print("Loading knowledge base...")
-        knowledge_base.load(upsert=True)
-        print("Knowledge base loaded successfully!")
-    else:
-        print("Using existing knowledge base.")
-
     print("\n=== Agno Multi-Agent Workflow Demo ===")
     print(
         "This demo shows how to use multiple Agno agents in a workflow to analyze Big Tech AI investments."
@@ -169,21 +262,40 @@ def main():
         if topic.lower() == "quit":
             break
 
+        # Create a URL-safe topic for session ID
+        url_safe_topic = topic.lower().replace(" ", "-")
+
+        # Initialize the workflow with SQLite storage for caching
+        workflow = AIInvestmentWorkflow(
+            session_id=f"ai-investment-analysis-{url_safe_topic}",
+            storage=SqliteStorage(
+                table_name="ai_investment_workflows",
+                db_file="sqlite_data/agno_workflows.db",
+            ),
+            debug_mode=True,
+        )
+
         print(f"\nAnalyzing '{topic}' through the workflow...")
-        # Run the workflow with the topic as input
-        result = run_workflow(topic, knowledge_base)
 
-        if not result:
-            print("Workflow execution failed.")
-            continue
+        # Run the workflow and collect results
+        results = None
+        for response in workflow.run(topic=topic, use_cache=True):
+            if response.event == RunEvent.run_completed:
+                results = response.content
+            elif response.event == RunEvent.run_error:
+                print(f"Workflow failed: {response.content}")
+                break
+            else:
+                print(response.content)
 
-        # Print the results from each step
-        print("\n=== Research Findings ===")
-        print(result["research"])
-        print("\n=== Analysis ===")
-        print(result["analysis"])
-        print("\n=== Executive Summary ===")
-        print(result["summary"])
+        if results:
+            # Print the results from each step
+            print("\n=== Research Findings ===")
+            print(results["research"])
+            print("\n=== Analysis ===")
+            print(results["analysis"])
+            print("\n=== Executive Summary ===")
+            print(results["summary"])
 
 
 if __name__ == "__main__":
