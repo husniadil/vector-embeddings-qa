@@ -10,6 +10,8 @@ from agno.embedder.openai import OpenAIEmbedder
 # Load environment variables
 load_dotenv()
 
+completion_model = os.getenv("COMPLETION_MODEL", "gpt-4.1-mini")
+
 
 def load_content():
     """Load content from content_data/content.txt, where each line is a separate text entry"""
@@ -42,7 +44,7 @@ def ask_question(question):
 
     # Set up the agent
     agent = Agent(
-        model=OpenAIChat(id="gpt-4.1-mini"),
+        model=OpenAIChat(id=completion_model),
         knowledge=knowledge_base,
         # Enable agentic RAG - let the agent decide when to search the knowledge base
         search_knowledge=True,

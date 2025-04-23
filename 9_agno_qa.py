@@ -10,6 +10,8 @@ from agno.tools.reasoning import ReasoningTools
 # Load environment variables
 load_dotenv()
 
+completion_model = os.getenv("COMPLETION_MODEL", "gpt-4.1-mini")
+
 # Initialize OpenAI client for embeddings
 embedding_client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
@@ -36,7 +38,7 @@ def save_embeddings(texts, embeddings):
     """Save texts and their embeddings to embedding_data/embedding.json"""
     # Create the embedding_data directory if it doesn't exist
     os.makedirs("embedding_data", exist_ok=True)
-    
+
     data = {"texts": texts, "embeddings": embeddings}
     with open("embedding_data/embedding.json", "w") as f:
         json.dump(data, f)
@@ -107,12 +109,10 @@ def get_relevant_context(query: str) -> str:
 
 def setup_agent():
     """Set up and return an Agno agent for QA"""
-    # Define the model to use - use a valid OpenAI model
-    model_name = "gpt-4.1-mini"
 
     # Create the agent with custom tools
     agent = Agent(
-        model=OpenAIChat(id=model_name),
+        model=OpenAIChat(id=completion_model),
         tools=[ReasoningTools(add_instructions=True), get_relevant_context],
         instructions=[
             "You are a helpful assistant specializing in AI investment information.",
@@ -121,7 +121,7 @@ def setup_agent():
             "If the user asks about specific companies, use their names in your search.",
             "If the answer cannot be found in the context, say so.",
             "Think step by step to provide accurate answers.",
-            "Always provide detailed information about AI investments when available."
+            "Always provide detailed information about AI investments when available.",
         ],
         markdown=True,
         show_tool_calls=True,

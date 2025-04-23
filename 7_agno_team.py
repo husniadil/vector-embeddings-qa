@@ -11,6 +11,8 @@ from agno.embedder.openai import OpenAIEmbedder
 # Load environment variables
 load_dotenv()
 
+completion_model = os.getenv("COMPLETION_MODEL", "gpt-4.1-mini")
+
 
 def setup_knowledge_base():
     """Set up a knowledge base using LanceDB and the content from content_data/content.txt"""
@@ -36,7 +38,7 @@ def create_investment_analysis_team(knowledge_base):
     # Financial Analyst Agent
     financial_analyst = Agent(
         name="Financial Analyst",
-        model=OpenAIChat(id="gpt-4.1-mini"),
+        model=OpenAIChat(id=completion_model),
         knowledge=knowledge_base,
         search_knowledge=True,
         tools=[ReasoningTools()],
@@ -53,7 +55,7 @@ def create_investment_analysis_team(knowledge_base):
     # Technology Analyst Agent
     technology_analyst = Agent(
         name="Technology Analyst",
-        model=OpenAIChat(id="gpt-4.1-mini"),
+        model=OpenAIChat(id=completion_model),
         knowledge=knowledge_base,
         search_knowledge=True,
         tools=[ReasoningTools()],
@@ -70,7 +72,7 @@ def create_investment_analysis_team(knowledge_base):
     # Market Analyst Agent
     market_analyst = Agent(
         name="Market Analyst",
-        model=OpenAIChat(id="gpt-4.1-mini"),
+        model=OpenAIChat(id=completion_model),
         knowledge=knowledge_base,
         search_knowledge=True,
         tools=[ReasoningTools()],
@@ -87,7 +89,7 @@ def create_investment_analysis_team(knowledge_base):
     # Executive Summary Agent
     executive_summary = Agent(
         name="Executive Summary",
-        model=OpenAIChat(id="gpt-4.1-mini"),
+        model=OpenAIChat(id=completion_model),
         knowledge=knowledge_base,
         search_knowledge=True,
         tools=[ReasoningTools()],
@@ -105,7 +107,7 @@ def create_investment_analysis_team(knowledge_base):
     investment_team = Team(
         name="AI Investment Analysis Team",
         mode="coordinate",  # Coordinator delegates tasks and synthesizes responses
-        model=OpenAIChat(id="gpt-4.1-mini"),
+        model=OpenAIChat(id=completion_model),
         members=[
             financial_analyst,
             technology_analyst,

@@ -12,6 +12,8 @@ from agno.embedder.openai import OpenAIEmbedder
 # Load environment variables
 load_dotenv()
 
+completion_model = os.getenv("COMPLETION_MODEL", "gpt-4.1-mini")
+
 # Define a database of Big Tech companies and their AI investments
 COMPANY_DATABASE = {
     "microsoft": {
@@ -408,7 +410,7 @@ def create_dynamic_planner_agent(knowledge_base):
     """
     agent = Agent(
         name="AI Investment Analyst",
-        model=OpenAIChat(id="gpt-4.1-mini"),
+        model=OpenAIChat(id=completion_model),
         knowledge=knowledge_base,
         search_knowledge=True,
         tools=[

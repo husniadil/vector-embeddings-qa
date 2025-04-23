@@ -10,6 +10,8 @@ from agno.embedder.openai import OpenAIEmbedder
 # Load environment variables
 load_dotenv()
 
+completion_model = os.getenv("COMPLETION_MODEL", "gpt-4.1-mini")
+
 
 def setup_knowledge_base():
     """Set up a knowledge base using LanceDB and the content from content_data/content.txt"""
@@ -33,7 +35,7 @@ def create_research_agent(knowledge_base):
     """Create an agent for researching information from the knowledge base"""
     return Agent(
         name="Research Agent",
-        model=OpenAIChat(id="gpt-4.1-mini"),
+        model=OpenAIChat(id=completion_model),
         knowledge=knowledge_base,
         search_knowledge=True,
         tools=[ReasoningTools()],
@@ -52,7 +54,7 @@ def create_analysis_agent():
     """Create an agent for analyzing the research findings"""
     return Agent(
         name="Analysis Agent",
-        model=OpenAIChat(id="gpt-4.1-mini"),
+        model=OpenAIChat(id=completion_model),
         tools=[ReasoningTools()],
         instructions=[
             "You are a financial analyst specialized in tech investments.",
@@ -69,7 +71,7 @@ def create_summary_agent():
     """Create an agent for creating an executive summary"""
     return Agent(
         name="Summary Agent",
-        model=OpenAIChat(id="gpt-4.1-mini"),
+        model=OpenAIChat(id=completion_model),
         tools=[ReasoningTools()],
         instructions=[
             "You are an executive communication specialist.",

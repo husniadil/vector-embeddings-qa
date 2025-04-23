@@ -18,6 +18,8 @@ load_dotenv()
 # Create a console for rich output
 console = Console()
 
+completion_model = os.getenv("COMPLETION_MODEL", "gpt-4.1-mini")
+
 
 def load_content():
     """Load content from content_data/content.txt, where each line is a separate text entry"""
@@ -130,7 +132,7 @@ def setup_agent_with_human_loop(knowledge_base):
     """Set up an Agno agent with human-in-the-loop capability"""
     # Create the agent with the knowledge base and human input tools
     agent = Agent(
-        model=OpenAIChat(id="gpt-4.1-mini"),
+        model=OpenAIChat(id=completion_model),
         knowledge=knowledge_base,
         # Enable agentic RAG - let the agent decide when to search the knowledge base
         search_knowledge=True,
