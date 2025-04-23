@@ -33,7 +33,7 @@ def create_research_agent(knowledge_base):
     """Create an agent for researching information from the knowledge base"""
     return Agent(
         name="Research Agent",
-        model=OpenAIChat(id="gpt-3.5-turbo"),
+        model=OpenAIChat(id="gpt-4.1-mini"),
         knowledge=knowledge_base,
         search_knowledge=True,
         tools=[ReasoningTools()],
@@ -52,7 +52,7 @@ def create_analysis_agent():
     """Create an agent for analyzing the research findings"""
     return Agent(
         name="Analysis Agent",
-        model=OpenAIChat(id="gpt-3.5-turbo"),
+        model=OpenAIChat(id="gpt-4.1-mini"),
         tools=[ReasoningTools()],
         instructions=[
             "You are a financial analyst specialized in tech investments.",
@@ -69,7 +69,7 @@ def create_summary_agent():
     """Create an agent for creating an executive summary"""
     return Agent(
         name="Summary Agent",
-        model=OpenAIChat(id="gpt-3.5-turbo"),
+        model=OpenAIChat(id="gpt-4.1-mini"),
         tools=[ReasoningTools()],
         instructions=[
             "You are an executive communication specialist.",

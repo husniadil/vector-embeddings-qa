@@ -42,7 +42,7 @@ def ask_question(question):
 
     # Set up the agent
     agent = Agent(
-        model=OpenAIChat(id="gpt-3.5-turbo"),
+        model=OpenAIChat(id="gpt-4.1-mini"),
         knowledge=knowledge_base,
         # Enable agentic RAG - let the agent decide when to search the knowledge base
         search_knowledge=True,

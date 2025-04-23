@@ -189,7 +189,7 @@ def create_tool_calling_agent():
     """
     agent = Agent(
         name="AI Investment Information Agent",
-        model=OpenAIChat(id="gpt-3.5-turbo"),
+        model=OpenAIChat(id="gpt-4.1-mini"),
         # No knowledge base
         # No memory
         tools=[get_company_info, compare_companies, get_investment_metrics],

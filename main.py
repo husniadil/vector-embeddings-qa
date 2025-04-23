@@ -89,7 +89,7 @@ def answer_question(question):
     context = "\n\n".join(relevant_texts)
 
     # Generate answer using the configured model
-    completion_model = os.getenv("COMPLETION_MODEL", "gpt-4o-mini")
+    completion_model = os.getenv("COMPLETION_MODEL", "gpt-4.1-mini")
     response = completion_client.chat.completions.create(
         model=completion_model,
         messages=[

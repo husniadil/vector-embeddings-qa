@@ -104,7 +104,7 @@ def get_relevant_context(query: str) -> str:
 def setup_agent():
     """Set up and return an Agno agent for QA"""
     # Define the model to use - use a valid OpenAI model
-    model_name = "gpt-3.5-turbo"
+    model_name = "gpt-4.1-mini"
 
     # Create the agent with custom tools
     agent = Agent(

@@ -130,7 +130,7 @@ def setup_agent_with_human_loop(knowledge_base):
     """Set up an Agno agent with human-in-the-loop capability"""
     # Create the agent with the knowledge base and human input tools
     agent = Agent(
-        model=OpenAIChat(id="gpt-3.5-turbo"),
+        model=OpenAIChat(id="gpt-4.1-mini"),
         knowledge=knowledge_base,
         # Enable agentic RAG - let the agent decide when to search the knowledge base
         search_knowledge=True,

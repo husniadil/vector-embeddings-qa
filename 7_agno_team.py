@@ -32,11 +32,11 @@ def setup_knowledge_base():
 
 def create_investment_analysis_team(knowledge_base):
     """Create a team of specialized agents for investment analysis"""
-    
+
     # Financial Analyst Agent
     financial_analyst = Agent(
         name="Financial Analyst",
-        model=OpenAIChat(id="gpt-3.5-turbo"),
+        model=OpenAIChat(id="gpt-4.1-mini"),
         knowledge=knowledge_base,
         search_knowledge=True,
         tools=[ReasoningTools()],
@@ -49,11 +49,11 @@ def create_investment_analysis_team(knowledge_base):
         ],
         markdown=True,
     )
-    
+
     # Technology Analyst Agent
     technology_analyst = Agent(
         name="Technology Analyst",
-        model=OpenAIChat(id="gpt-3.5-turbo"),
+        model=OpenAIChat(id="gpt-4.1-mini"),
         knowledge=knowledge_base,
         search_knowledge=True,
         tools=[ReasoningTools()],
@@ -66,11 +66,11 @@ def create_investment_analysis_team(knowledge_base):
         ],
         markdown=True,
     )
-    
+
     # Market Analyst Agent
     market_analyst = Agent(
         name="Market Analyst",
-        model=OpenAIChat(id="gpt-3.5-turbo"),
+        model=OpenAIChat(id="gpt-4.1-mini"),
         knowledge=knowledge_base,
         search_knowledge=True,
         tools=[ReasoningTools()],
@@ -83,11 +83,11 @@ def create_investment_analysis_team(knowledge_base):
         ],
         markdown=True,
     )
-    
+
     # Executive Summary Agent
     executive_summary = Agent(
         name="Executive Summary",
-        model=OpenAIChat(id="gpt-3.5-turbo"),
+        model=OpenAIChat(id="gpt-4.1-mini"),
         knowledge=knowledge_base,
         search_knowledge=True,
         tools=[ReasoningTools()],
@@ -100,13 +100,18 @@ def create_investment_analysis_team(knowledge_base):
         ],
         markdown=True,
     )
-    
+
     # Create the investment analysis team with coordination mode
     investment_team = Team(
         name="AI Investment Analysis Team",
         mode="coordinate",  # Coordinator delegates tasks and synthesizes responses
-        model=OpenAIChat(id="gpt-3.5-turbo"),
-        members=[financial_analyst, technology_analyst, market_analyst, executive_summary],
+        model=OpenAIChat(id="gpt-4.1-mini"),
+        members=[
+            financial_analyst,
+            technology_analyst,
+            market_analyst,
+            executive_summary,
+        ],
         show_tool_calls=True,
         markdown=True,
         description="You are the coordinator of an AI investment analysis team that provides comprehensive analysis of Big Tech AI investments.",
@@ -124,7 +129,7 @@ def create_investment_analysis_team(knowledge_base):
         ],
         show_members_responses=True,
     )
-    
+
     return investment_team
 
 
@@ -146,16 +151,28 @@ def main():
     investment_team = create_investment_analysis_team(knowledge_base)
 
     print("\n=== Agno Team Demo ===")
-    print("This demo shows how a team of specialized agents can work together to analyze Big Tech AI investments.")
+    print(
+        "This demo shows how a team of specialized agents can work together to analyze Big Tech AI investments."
+    )
     print("The team consists of four specialized agents:")
-    print("1. Financial Analyst: Focuses on financial metrics, ROI, and investment risks")
-    print("2. Technology Analyst: Focuses on technological trends, infrastructure, and technical feasibility")
-    print("3. Market Analyst: Focuses on market dynamics, competitive positioning, and industry trends")
+    print(
+        "1. Financial Analyst: Focuses on financial metrics, ROI, and investment risks"
+    )
+    print(
+        "2. Technology Analyst: Focuses on technological trends, infrastructure, and technical feasibility"
+    )
+    print(
+        "3. Market Analyst: Focuses on market dynamics, competitive positioning, and industry trends"
+    )
     print("4. Executive Summary: Creates concise summaries of the analysis")
     print("\nExample questions to ask:")
-    print("- 'What are the financial implications of Amazon's $100 billion AI investment?'")
+    print(
+        "- 'What are the financial implications of Amazon's $100 billion AI investment?'"
+    )
     print("- 'How do Big Tech AI investments impact the competitive landscape?'")
-    print("- 'What are the technological challenges of these massive AI infrastructure investments?'")
+    print(
+        "- 'What are the technological challenges of these massive AI infrastructure investments?'"
+    )
     print("- 'Provide a comprehensive analysis of Big Tech's AI spending trends.'")
 
     # Run the team

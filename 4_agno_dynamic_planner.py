@@ -408,7 +408,7 @@ def create_dynamic_planner_agent(knowledge_base):
     """
     agent = Agent(
         name="AI Investment Analyst",
-        model=OpenAIChat(id="gpt-3.5-turbo"),
+        model=OpenAIChat(id="gpt-4.1-mini"),
         knowledge=knowledge_base,
         search_knowledge=True,
         tools=[

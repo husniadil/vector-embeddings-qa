@@ -350,7 +350,7 @@ def create_hardcoded_multi_tool_agent():
     """
     agent = Agent(
         name="AI Investment Analyst",
-        model=OpenAIChat(id="gpt-3.5-turbo"),
+        model=OpenAIChat(id="gpt-4.1-mini"),
         # No knowledge base
         # No memory
         tools=[

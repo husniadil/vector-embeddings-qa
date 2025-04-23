@@ -15,7 +15,7 @@ def create_prompt_only_agent():
     """
     agent = Agent(
         name="AI Investment Content Creator",
-        model=OpenAIChat(id="gpt-3.5-turbo"),
+        model=OpenAIChat(id="gpt-4.1-mini"),
         # No knowledge base
         # No tools
         # No memory

@@ -8,7 +8,7 @@ The system works by:
 1. Converting text content into vector embeddings using OpenAI's text-embedding-3-small model
 2. Storing these embeddings for efficient retrieval
 3. Processing user questions by converting them to embeddings and finding the most relevant context
-4. Generating answers using a configurable language model (default: gpt-4o-mini) based on the retrieved context
+4. Generating answers using a configurable language model (default: gpt-4.1-mini) based on the retrieved context
 
 ## Prerequisites
 
@@ -111,7 +111,7 @@ flowchart TD
 
 - **Embedding Generation**: Uses OpenAI's text-embedding-3-small model to convert text into vector representations
 - **Similarity Search**: Implements cosine similarity to find the most relevant context for each question
-- **Answer Generation**: Utilizes configurable language models (default: gpt-4o-mini) to generate accurate answers based on the retrieved context
+- **Answer Generation**: Utilizes configurable language models (default: gpt-4.1-mini) to generate accurate answers based on the retrieved context
 
 ### File Structure
 
