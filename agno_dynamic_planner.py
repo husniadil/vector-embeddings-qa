@@ -1,260 +1,198 @@
 import os
 import json
-import time
 from dotenv import load_dotenv
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from agno.tools import tool
 from agno.tools.reasoning import ReasoningTools
+from agno.knowledge.text import TextKnowledgeBase
+from agno.vectordb.lancedb import LanceDb
+from agno.embedder.openai import OpenAIEmbedder
 
 # Load environment variables
 load_dotenv()
 
-
-# Define a simple product database
-PRODUCT_DATABASE = {
-    "laptop-ai-pro": {
-        "name": "AI Pro Laptop",
-        "price": 1299.99,
-        "category": "Computers",
-        "stock": 15,
-        "description": "High-performance laptop optimized for AI development with NVIDIA GPU",
-        "features": ["16GB RAM", "1TB SSD", "NVIDIA RTX 4070", "15.6 inch display"],
-        "rating": 4.7,
-        "reviews": 128,
-    },
-    "smart-assistant": {
-        "name": "Smart Home Assistant",
-        "price": 129.99,
-        "category": "Smart Home",
-        "stock": 45,
-        "description": "Voice-controlled smart assistant with advanced AI capabilities",
-        "features": [
-            "Voice recognition",
-            "Smart home integration",
-            "AI-powered responses",
-            "Music streaming",
+# Define a database of Big Tech companies and their AI investments
+COMPANY_DATABASE = {
+    "microsoft": {
+        "name": "Microsoft",
+        "planned_investment_2025": "$80 billion",
+        "investment_2024": "$53 billion",
+        "key_areas": ["Azure Cloud", "OpenAI Partnership", "Copilot Agents"],
+        "ceo": "Satya Nadella",
+        "stock_impact": "Lost $200 billion in market value after reporting weaker cloud growth",
+        "challenges": [
+            "Glitchy and costly Copilot agents",
+            "Slow enterprise adoption",
+            "ROI concerns",
         ],
-        "rating": 4.5,
-        "reviews": 302,
     },
-    "ai-camera": {
-        "name": "AI-Powered Security Camera",
-        "price": 199.99,
-        "category": "Security",
-        "stock": 28,
-        "description": "Security camera with facial recognition and anomaly detection",
-        "features": [
-            "Facial recognition",
-            "Night vision",
-            "Motion detection",
-            "Cloud storage",
+    "alphabet": {
+        "name": "Alphabet (Google)",
+        "planned_investment_2025": "$75 billion",
+        "investment_2024": "$53 billion",
+        "key_areas": ["Gemini AI Models", "Cloud Infrastructure", "AI Research"],
+        "ceo": "Sundar Pichai",
+        "stock_impact": "8% drop, fifth-worst trading day in past decade",
+        "challenges": [
+            "Opaque usage metrics for Gemini",
+            "Integrating AI into search without cannibalizing ad revenue",
         ],
-        "rating": 4.3,
-        "reviews": 89,
     },
-    "ml-toolkit": {
-        "name": "Machine Learning Developer Toolkit",
-        "price": 299.99,
-        "category": "Software",
-        "stock": 0,
-        "description": "Comprehensive software suite for machine learning development",
-        "features": [
-            "Model training",
-            "Data preprocessing",
-            "Visualization tools",
-            "API integration",
-        ],
-        "rating": 4.8,
-        "reviews": 56,
+    "amazon": {
+        "name": "Amazon",
+        "planned_investment_2025": "$100+ billion",
+        "investment_2024": "$77 billion",
+        "key_areas": ["AWS Data Centers", "AI Infrastructure", "Specialized Chips"],
+        "ceo": "Andy Jassy",
+        "stock_impact": "Fell 7% in after-hours trading after investment announcement",
+        "challenges": ["Distant ROI", "Significant capital expenditure"],
     },
-    "neural-headphones": {
-        "name": "Neural Adaptive Headphones",
-        "price": 249.99,
-        "category": "Audio",
-        "stock": 12,
-        "description": "Headphones that adapt to your listening preferences using neural networks",
-        "features": [
-            "Noise cancellation",
-            "Adaptive EQ",
-            "Wireless",
-            "30-hour battery",
+    "meta": {
+        "name": "Meta",
+        "planned_investment_2025": "Hundreds of billions",
+        "investment_2024": "$40 billion",
+        "key_areas": ["AI for Ad Targeting", "Llama Models", "AI Infrastructure"],
+        "ceo": "Mark Zuckerberg",
+        "stock_impact": "Positive reception, shares rising despite increased spending",
+        "challenges": ["Regulatory scrutiny", "Competition in AI space"],
+    },
+    "openai": {
+        "name": "OpenAI",
+        "planned_investment_2025": "$100 billion (with partners)",
+        "investment_2024": "Not publicly disclosed",
+        "key_areas": ["GPT Models", "AI Safety", "US Infrastructure"],
+        "ceo": "Sam Altman",
+        "stock_impact": "Private company, valued at $260 billion in recent talks",
+        "challenges": [
+            "Competition from open-source models",
+            "Regulatory concerns",
+            "Governance issues",
         ],
-        "rating": 4.6,
-        "reviews": 175,
+    },
+    "deepseek": {
+        "name": "DeepSeek",
+        "planned_investment_2025": "Not publicly disclosed",
+        "investment_2024": "Not publicly disclosed",
+        "key_areas": ["R1 Reasoning Model", "Cost-efficient AI"],
+        "ceo": "Not specified",
+        "stock_impact": "Caused Nvidia shares to plunge 17%, erasing $600 billion in one day",
+        "challenges": [
+            "Limited access to advanced Nvidia GPUs",
+            "Competition from established players",
+        ],
     },
 }
 
-# Define customer profiles for personalization
-CUSTOMER_PROFILES = {
-    "developer": {
-        "interests": ["Computers", "Software"],
-        "budget": 2000,
-        "preferences": ["High performance", "Development tools"],
-    },
-    "home_user": {
-        "interests": ["Smart Home", "Audio"],
-        "budget": 500,
-        "preferences": ["Ease of use", "Integration"],
-    },
-    "security_conscious": {
-        "interests": ["Security"],
-        "budget": 1000,
-        "preferences": ["Reliability", "Advanced features"],
-    },
+# Define a database of AI investment metrics and trends
+INVESTMENT_METRICS = {
+    "big_tech_combined_2024": "$246 billion",
+    "big_tech_combined_2023": "$151 billion",
+    "projected_big_tech_2025": "$320+ billion",
+    "growth_rate_2023_to_2024": "63%",
+    "magnificent_seven_capex_growth": "40%",
+    "rest_of_sp500_capex_growth": "3.5%",
+    "magnificent_seven_profit_growth": "33%",
+    "rest_of_sp500_profit_growth": "5%",
 }
 
-# Define a simple order database
-ORDER_DATABASE = {}
+# Define a database of AI investment analysis reports
+ANALYSIS_REPORTS = {
+    "investor_concerns": [
+        "Doubling down on spending without commensurate revenue increase",
+        "Capital that could be returned as buybacks and dividends",
+        "Starving non-AI business lines",
+        "Cheaper and more commoditized AI models",
+        "Distant return on investment",
+    ],
+    "executive_responses": [
+        "AI opportunity is 'as big as it comes' (Pichai)",
+        "Cannot take foot off the gas to remain competitive",
+        "Responding to 'significant signals of demand' (Jassy)",
+        "Folly of slowing down and failing to capitalize (Nadella)",
+        "New techniques could make AI cheaper and spur new research",
+    ],
+    "analyst_perspectives": [
+        "If cloud growth accelerates, investors will be more comfortable with spending",
+        "Meta shows tangible returns from AI investment in ad targeting",
+        "Google's search empire shows no cracks despite AI competition",
+        "Leaders can't take foot off the gas in AI race",
+        "Potential for an 'AI winter' at some point, but not imminent",
+    ],
+}
 
 
 @tool
-def search_products_by_category(category: str) -> str:
-    """Search for products in a specific category.
+def get_company_info(company_name: str) -> str:
+    """Get detailed information about a Big Tech company's AI investments.
 
     Args:
-        category: The category to search for
+        company_name: The name of the company to look up
 
     Returns:
-        List of products in the specified category
+        Detailed information about the company's AI investments
     """
-    category = category.lower().strip()
+    company_name = company_name.lower().strip()
 
-    matching_products = {}
-    for product_id, product in PRODUCT_DATABASE.items():
-        if product["category"].lower() == category:
-            matching_products[product_id] = product
+    # Handle common variations
+    if company_name == "google":
+        company_name = "alphabet"
+    elif company_name == "facebook":
+        company_name = "meta"
 
-    if matching_products:
-        return json.dumps(matching_products, indent=2)
+    if company_name in COMPANY_DATABASE:
+        company = COMPANY_DATABASE[company_name]
+        return json.dumps(company, indent=2)
     else:
-        return f"No products found in category '{category}'."
+        return f"Company '{company_name}' not found in the database. Available companies: {', '.join(COMPANY_DATABASE.keys())}"
 
 
 @tool
-def search_products_by_price_range(min_price: float, max_price: float) -> str:
-    """Search for products within a specific price range.
+def compare_companies(company1: str, company2: str) -> str:
+    """Compare AI investments between two Big Tech companies.
 
     Args:
-        min_price: The minimum price
-        max_price: The maximum price
+        company1: The name of the first company
+        company2: The name of the second company
 
     Returns:
-        List of products within the price range
+        Comparison of AI investments between the two companies
     """
-    matching_products = {}
-    for product_id, product in PRODUCT_DATABASE.items():
-        if min_price <= product["price"] <= max_price:
-            matching_products[product_id] = product
+    company1 = company1.lower().strip()
+    company2 = company2.lower().strip()
 
-    if matching_products:
-        return json.dumps(matching_products, indent=2)
-    else:
-        return f"No products found within price range ${min_price} - ${max_price}."
+    # Handle common variations
+    if company1 == "google":
+        company1 = "alphabet"
+    elif company1 == "facebook":
+        company1 = "meta"
 
+    if company2 == "google":
+        company2 = "alphabet"
+    elif company2 == "facebook":
+        company2 = "meta"
 
-@tool
-def search_products_by_feature(feature: str) -> str:
-    """Search for products with a specific feature.
+    if company1 not in COMPANY_DATABASE:
+        return f"Company '{company1}' not found in the database. Available companies: {', '.join(COMPANY_DATABASE.keys())}"
 
-    Args:
-        feature: The feature to search for
+    if company2 not in COMPANY_DATABASE:
+        return f"Company '{company2}' not found in the database. Available companies: {', '.join(COMPANY_DATABASE.keys())}"
 
-    Returns:
-        List of products with the specified feature
-    """
-    feature = feature.lower().strip()
-
-    matching_products = {}
-    for product_id, product in PRODUCT_DATABASE.items():
-        for prod_feature in product["features"]:
-            if feature in prod_feature.lower():
-                matching_products[product_id] = product
-                break
-
-    if matching_products:
-        return json.dumps(matching_products, indent=2)
-    else:
-        return f"No products found with feature '{feature}'."
-
-
-@tool
-def get_product_details(product_id: str) -> str:
-    """Get detailed information about a product.
-
-    Args:
-        product_id: The ID of the product to look up
-
-    Returns:
-        Detailed information about the product
-    """
-    product_id = product_id.lower().strip()
-
-    if product_id in PRODUCT_DATABASE:
-        product = PRODUCT_DATABASE[product_id]
-        return json.dumps(product, indent=2)
-    else:
-        return f"Product with ID '{product_id}' not found in the database."
-
-
-@tool
-def check_product_availability(product_id: str) -> str:
-    """Check if a product is available in stock.
-
-    Args:
-        product_id: The ID of the product to check
-
-    Returns:
-        Availability status of the product
-    """
-    product_id = product_id.lower().strip()
-
-    if product_id in PRODUCT_DATABASE:
-        product = PRODUCT_DATABASE[product_id]
-        stock = product["stock"]
-
-        if stock > 0:
-            return (
-                f"Product '{product['name']}' is in stock. Available quantity: {stock}."
-            )
-        else:
-            return f"Product '{product['name']}' is currently out of stock."
-    else:
-        return f"Product with ID '{product_id}' not found in the database."
-
-
-@tool
-def compare_products(product_id1: str, product_id2: str) -> str:
-    """Compare two products side by side.
-
-    Args:
-        product_id1: The ID of the first product
-        product_id2: The ID of the second product
-
-    Returns:
-        Comparison of the two products
-    """
-    product_id1 = product_id1.lower().strip()
-    product_id2 = product_id2.lower().strip()
-
-    if product_id1 not in PRODUCT_DATABASE:
-        return f"Product with ID '{product_id1}' not found in the database."
-
-    if product_id2 not in PRODUCT_DATABASE:
-        return f"Product with ID '{product_id2}' not found in the database."
-
-    product1 = PRODUCT_DATABASE[product_id1]
-    product2 = PRODUCT_DATABASE[product_id2]
+    comp1 = COMPANY_DATABASE[company1]
+    comp2 = COMPANY_DATABASE[company2]
 
     comparison = {
         "comparison": {
-            "name": [product1["name"], product2["name"]],
-            "price": [product1["price"], product2["price"]],
-            "category": [product1["category"], product2["category"]],
-            "stock": [product1["stock"], product2["stock"]],
-            "rating": [product1["rating"], product2["rating"]],
-            "reviews": [product1["reviews"], product2["reviews"]],
-            "features": [product1["features"], product2["features"]],
+            "name": [comp1["name"], comp2["name"]],
+            "planned_investment_2025": [
+                comp1["planned_investment_2025"],
+                comp2["planned_investment_2025"],
+            ],
+            "investment_2024": [comp1["investment_2024"], comp2["investment_2024"]],
+            "key_areas": [comp1["key_areas"], comp2["key_areas"]],
+            "ceo": [comp1["ceo"], comp2["ceo"]],
+            "stock_impact": [comp1["stock_impact"], comp2["stock_impact"]],
+            "challenges": [comp1["challenges"], comp2["challenges"]],
         }
     }
 
@@ -262,167 +200,241 @@ def compare_products(product_id1: str, product_id2: str) -> str:
 
 
 @tool
-def get_customer_profile(profile_type: str) -> str:
-    """Get a customer profile for personalized recommendations.
-
-    Args:
-        profile_type: The type of customer profile (developer, home_user, security_conscious)
+def get_investment_metrics() -> str:
+    """Get overall metrics about Big Tech AI investments.
 
     Returns:
-        Customer profile information
+        Overall metrics and trends in Big Tech AI investments
     """
-    profile_type = profile_type.lower().strip()
-
-    if profile_type in CUSTOMER_PROFILES:
-        return json.dumps(CUSTOMER_PROFILES[profile_type], indent=2)
-    else:
-        return f"Customer profile '{profile_type}' not found. Available profiles: {', '.join(CUSTOMER_PROFILES.keys())}"
+    return json.dumps(INVESTMENT_METRICS, indent=2)
 
 
 @tool
-def generate_personalized_recommendations(profile_type: str) -> str:
-    """Generate personalized product recommendations based on a customer profile.
+def get_investment_analysis(analysis_type: str) -> str:
+    """Get analysis about Big Tech AI investments.
 
     Args:
-        profile_type: The type of customer profile (developer, home_user, security_conscious)
+        analysis_type: Type of analysis to retrieve (investor_concerns, executive_responses, analyst_perspectives)
 
     Returns:
-        Personalized product recommendations
+        Analysis about Big Tech AI investments
     """
-    profile_type = profile_type.lower().strip()
+    analysis_type = analysis_type.lower().strip()
 
-    if profile_type not in CUSTOMER_PROFILES:
-        return f"Customer profile '{profile_type}' not found. Available profiles: {', '.join(CUSTOMER_PROFILES.keys())}"
-
-    profile = CUSTOMER_PROFILES[profile_type]
-
-    # Find products that match the profile's interests and are within budget
-    recommendations = {}
-    for product_id, product in PRODUCT_DATABASE.items():
-        if (
-            product["category"] in profile["interests"]
-            and product["price"] <= profile["budget"]
-        ):
-            recommendations[product_id] = product
-
-    if recommendations:
-        return json.dumps(recommendations, indent=2)
+    if analysis_type in ANALYSIS_REPORTS:
+        return json.dumps({analysis_type: ANALYSIS_REPORTS[analysis_type]}, indent=2)
     else:
-        return f"No suitable recommendations found for profile '{profile_type}'."
+        return f"Analysis type '{analysis_type}' not found. Available types: {', '.join(ANALYSIS_REPORTS.keys())}"
 
 
 @tool
-def add_to_cart(product_id: str, quantity: int) -> str:
-    """Add a product to the shopping cart.
+def search_content_by_keyword(keyword: str) -> str:
+    """Search the content database for information related to a keyword.
 
     Args:
-        product_id: The ID of the product to add
-        quantity: The quantity to add
+        keyword: The keyword to search for
 
     Returns:
-        Confirmation message
+        Information related to the keyword from the content database
     """
-    product_id = product_id.lower().strip()
+    # Set up a knowledge base for searching
+    knowledge_base = TextKnowledgeBase(
+        path="content_data",  # Use the content_data directory which contains content.txt
+        vector_db=LanceDb(
+            table_name="embeddings_dynamic_planner",
+            uri="lancedb_data",  # Use lancedb_data directory for database storage
+        ),
+        embedder=OpenAIEmbedder(
+            id=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+        ),
+    )
 
-    if product_id in PRODUCT_DATABASE:
-        product = PRODUCT_DATABASE[product_id]
-        available_stock = product["stock"]
+    # Search for the keyword
+    results = knowledge_base.search(keyword, limit=3)
 
-        if available_stock <= 0:
-            return f"Cannot add to cart. Product '{product['name']}' is out of stock."
-
-        if quantity > available_stock:
-            return f"Cannot add {quantity} units to cart. Only {available_stock} units of '{product['name']}' are available."
-
-        # In a real application, this would update a user's cart
-        # For this demo, we'll just return a success message
-        return f"Successfully added {quantity} unit(s) of '{product['name']}' to cart."
+    if results:
+        return json.dumps({"results": [result.content for result in results]}, indent=2)
     else:
-        return f"Product with ID '{product_id}' not found in the database."
+        return f"No information found for keyword '{keyword}'."
 
 
 @tool
-def process_order(product_id: str, quantity: int, customer_email: str) -> str:
-    """Process an order for a product.
+def generate_investment_recommendation(
+    company_name: str, investment_amount: float
+) -> str:
+    """Generate a recommendation for investing in a Big Tech company's AI initiatives.
 
     Args:
-        product_id: The ID of the product to order
-        quantity: The quantity to order
-        customer_email: The customer's email address
+        company_name: The name of the company to analyze
+        investment_amount: The amount to potentially invest (in USD)
 
     Returns:
-        Order confirmation
+        Investment recommendation with pros and cons
     """
-    product_id = product_id.lower().strip()
+    company_name = company_name.lower().strip()
 
-    if product_id in PRODUCT_DATABASE:
-        product = PRODUCT_DATABASE[product_id]
-        available_stock = product["stock"]
+    # Handle common variations
+    if company_name == "google":
+        company_name = "alphabet"
+    elif company_name == "facebook":
+        company_name = "meta"
 
-        if available_stock <= 0:
-            return f"Cannot process order. Product '{product['name']}' is out of stock."
+    if company_name not in COMPANY_DATABASE:
+        return f"Company '{company_name}' not found in the database. Available companies: {', '.join(COMPANY_DATABASE.keys())}"
 
-        if quantity > available_stock:
-            return f"Cannot order {quantity} units. Only {available_stock} units of '{product['name']}' are available."
+    company = COMPANY_DATABASE[company_name]
 
-        # Generate a simple order ID
-        order_id = f"ORD-{int(time.time())}"
+    # Generate a recommendation based on the company's profile
+    recommendation = {
+        "company": company["name"],
+        "investment_amount": f"${investment_amount:,.2f}",
+        "recommendation": (
+            "Positive" if "Positive" in company["stock_impact"] else "Cautious"
+        ),
+        "pros": [
+            f"Significant AI investment planned for 2025: {company['planned_investment_2025']}",
+            f"Focus on key AI areas: {', '.join(company['key_areas'])}",
+            f"Strong leadership under CEO {company['ceo']}",
+        ],
+        "cons": company["challenges"],
+        "risk_level": "Medium" if "Positive" in company["stock_impact"] else "High",
+        "potential_return": "High but long-term",
+        "alternative_considerations": "Consider diversifying AI investments across multiple Big Tech companies",
+    }
 
-        # Update stock (in a real application, this would be a database update)
-        PRODUCT_DATABASE[product_id]["stock"] -= quantity
+    return json.dumps(recommendation, indent=2)
 
-        # Save order to database
-        ORDER_DATABASE[order_id] = {
-            "product_id": product_id,
-            "product_name": product["name"],
-            "quantity": quantity,
-            "customer_email": customer_email,
-            "total_price": product["price"] * quantity,
-            "status": "confirmed",
-        }
 
-        return f"Order confirmed! Order ID: {order_id}. {quantity} unit(s) of '{product['name']}' will be shipped to {customer_email}. Total: ${product['price'] * quantity:.2f}"
+@tool
+def analyze_market_impact(event: str) -> str:
+    """Analyze the market impact of a specific AI-related event or announcement.
+
+    Args:
+        event: The AI-related event or announcement to analyze
+
+    Returns:
+        Analysis of the market impact
+    """
+    events = {
+        "deepseek r1 release": {
+            "description": "Release of DeepSeek's R1 reasoning model that claimed similar capabilities to Google and OpenAI at a fraction of the price",
+            "direct_impact": "Caused Nvidia shares to plunge 17%, erasing $600 billion in one day",
+            "indirect_impact": "Exacerbated sell-off in Big Tech stocks, particularly Microsoft and Alphabet",
+            "long_term_implications": "Raised concerns about AI model commoditization and potential compression of profit margins",
+            "expert_opinions": [
+                "Could add to demand by showing how new techniques could make AI cheaper (Pichai)",
+                "Will probably amplify investor concerns in the meantime (Tierney)",
+            ],
+        },
+        "microsoft earnings": {
+            "description": "Microsoft's Q4 2024 earnings report showing weaker than expected cloud growth alongside steep increases in capital spending",
+            "direct_impact": "Microsoft had $200 billion wiped from market value",
+            "indirect_impact": "Raised investor concerns about the return on AI investments",
+            "long_term_implications": "Increased scrutiny on the adoption rate of Microsoft's Copilot agents",
+            "expert_opinions": [
+                "If we see Copilot uptake improve, investors will be more comfortable with spending (Tierney)"
+            ],
+        },
+        "google earnings": {
+            "description": "Google's Q4 2024 earnings report showing 13% growth in ad revenue but opaque metrics about Gemini usage",
+            "direct_impact": "Alphabet's 8% drop was its fifth-worst trading day in the past decade",
+            "indirect_impact": "Raised questions about Google's ability to monetize its AI investments",
+            "long_term_implications": "Increased focus on how Google integrates AI into search without cannibalizing its core ad business",
+            "expert_opinions": [
+                "If there's meant to be cracks in Google's search empire, it certainly isn't showing up yet (Shmulik)"
+            ],
+        },
+        "amazon investment announcement": {
+            "description": "Amazon's announcement of more than $100 billion in capital expenditure for 2025",
+            "direct_impact": "Stock fell as much as 7% in after-hours trading",
+            "indirect_impact": "Set a new benchmark for AI infrastructure investment among Big Tech",
+            "long_term_implications": "Positioned AWS to potentially gain market share in cloud AI services",
+            "expert_opinions": [
+                "Growth is cooking along a little bit, but the appetite to invest hasn't been curtailed (Pearson)",
+                "They are ploughing ahead even if the return on investment seems distant (Pearson)",
+            ],
+        },
+        "meta earnings": {
+            "description": "Meta's earnings report and pledge to spend 'hundreds of billions' more on AI",
+            "direct_impact": "Shares rising despite increased spending plans",
+            "indirect_impact": "Demonstrated that investors can embrace AI spending when ROI is visible",
+            "long_term_implications": "Set Meta apart from peers by showing tangible returns from AI investment",
+            "expert_opinions": [
+                "Investors have embraced Meta because there is a real-time return-on-investment improvement in client spending that is measurable (Tierney)"
+            ],
+        },
+        "openai softbank partnership": {
+            "description": "OpenAI's partnership with SoftBank and Oracle to invest $100 billion in AI-related US infrastructure",
+            "direct_impact": "Talks to invest $25 billion in OpenAI at a $260 billion valuation",
+            "indirect_impact": "Demonstrated continued private investment appetite despite public market concerns",
+            "long_term_implications": "Potential to rise to half a trillion investment over time",
+            "expert_opinions": [
+                "Could there be an AI winter at some point? Sure. But if you're in a position to be a leader, you can't take your foot off the gas (Jaluria)"
+            ],
+        },
+    }
+
+    event = event.lower().strip()
+
+    if event in events:
+        return json.dumps(events[event], indent=2)
     else:
-        return f"Product with ID '{product_id}' not found in the database."
+        return f"Event '{event}' not found in the database. Available events: {', '.join(events.keys())}"
 
 
-def create_dynamic_planner_agent():
-    """Create a Dynamic Planner Agent
+def setup_knowledge_base():
+    """Set up a knowledge base using LanceDB and the content from content_data/content.txt"""
+    # Create the knowledge base with LanceDB as the vector database
+    knowledge_base = TextKnowledgeBase(
+        path="content_data",  # Use the content_data directory which contains content.txt
+        vector_db=LanceDb(
+            table_name="embeddings_dynamic_planner",
+            uri="lancedb_data",  # Use lancedb_data directory for database storage
+        ),
+        embedder=OpenAIEmbedder(
+            id=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+        ),
+    )
+
+    return knowledge_base
+
+
+def create_dynamic_planner_agent(knowledge_base):
+    """Create a Dynamic Planner Agent for AI investment analysis
 
     This agent can dynamically plan steps based on the goal.
     It can determine the order of tool calls on its own.
-    Example: product recommendation with automatic breakdown.
+    Example: AI investment analysis with automatic breakdown.
     """
     agent = Agent(
-        name="AI Shopping Assistant",
+        name="AI Investment Analyst",
         model=OpenAIChat(id="gpt-3.5-turbo"),
-        # No knowledge base
-        # No persistent memory
+        knowledge=knowledge_base,
+        search_knowledge=True,
         tools=[
             ReasoningTools(),
-            search_products_by_category,
-            search_products_by_price_range,
-            search_products_by_feature,
-            get_product_details,
-            check_product_availability,
-            compare_products,
-            get_customer_profile,
-            generate_personalized_recommendations,
-            add_to_cart,
-            process_order,
+            get_company_info,
+            compare_companies,
+            get_investment_metrics,
+            get_investment_analysis,
+            search_content_by_keyword,
+            generate_investment_recommendation,
+            analyze_market_impact,
         ],
         instructions=[
-            "You are an AI shopping assistant that helps customers find and purchase AI technology products.",
-            "You can dynamically plan and execute steps based on the customer's goal.",
-            "First, understand what the customer wants to achieve.",
+            "You are an AI investment analyst specializing in Big Tech AI investments.",
+            "You can dynamically plan and execute steps based on the user's goal.",
+            "First, understand what the user wants to analyze about AI investments.",
             "Then, create a plan with the necessary steps to fulfill their request.",
             "Execute the plan by calling the appropriate tools in the right order.",
-            "You can search for products by category, price range, or features.",
-            "You can get detailed information about products and check their availability.",
-            "You can compare products side by side to help customers make decisions.",
-            "You can generate personalized recommendations based on customer profiles.",
-            "You can add products to cart and process orders.",
-            "Be proactive and helpful, suggesting additional steps that might benefit the customer.",
+            "You can get information about specific companies and their AI investments.",
+            "You can compare AI investments between different Big Tech companies.",
+            "You can retrieve overall metrics and trends in Big Tech AI investments.",
+            "You can get analysis from different perspectives: investors, executives, and analysts.",
+            "You can search the content database for specific keywords related to AI investments.",
+            "You can generate investment recommendations for specific companies.",
+            "You can analyze the market impact of specific AI-related events.",
+            "Be proactive and helpful, suggesting additional analysis that might benefit the user.",
             "Always explain your reasoning and plan before taking actions.",
         ],
         markdown=True,
@@ -433,19 +445,20 @@ def create_dynamic_planner_agent():
 
 
 def main():
-    print("Creating a Dynamic Planner Agent...")
-    agent = create_dynamic_planner_agent()
+    print("Creating a Dynamic Planner Agent for AI Investment Analysis...")
+    knowledge_base = setup_knowledge_base()
+    agent = create_dynamic_planner_agent(knowledge_base)
 
-    print("\n=== Dynamic Planner Agent Demo ===")
+    print("\n=== Dynamic Planner Agent for AI Investment Analysis ===")
     print("This demo shows an agent that can dynamically plan steps based on the goal.")
     print("The agent determines the order of tool calls on its own.")
     print("Suitable for: complex tasks requiring reasoning and multi-step planning.")
     print("\nExample requests:")
-    print("- 'Find me the best AI development laptop'")
-    print("- 'I need a smart home product under $150'")
-    print("- 'Compare the AI Pro Laptop with the Neural Adaptive Headphones'")
-    print("- 'Recommend products for a software developer'")
-    print("- 'I want to buy a security camera with facial recognition'")
+    print("- 'Compare Microsoft and Google's AI investments'")
+    print("- 'What was the market impact of DeepSeek's R1 release?'")
+    print("- 'Should I invest in Meta's AI initiatives?'")
+    print("- 'What are the main concerns investors have about Big Tech AI spending?'")
+    print("- 'How much are Big Tech companies planning to spend on AI in 2025?'")
 
     # Run the agent
     while True:

@@ -1,4 +1,3 @@
-import os
 import json
 from dotenv import load_dotenv
 from agno.agent import Agent
@@ -9,142 +8,203 @@ from agno.tools import tool
 load_dotenv()
 
 
-# Define a simple product database
-PRODUCT_DATABASE = {
-    "laptop-ai-pro": {
-        "name": "AI Pro Laptop",
-        "price": 1299.99,
-        "category": "Computers",
-        "stock": 15,
-        "description": "High-performance laptop optimized for AI development with NVIDIA GPU",
+# Define a database of Big Tech companies and their AI investments
+COMPANY_DATABASE = {
+    "microsoft": {
+        "name": "Microsoft",
+        "planned_investment_2025": "$80 billion",
+        "investment_2024": "$53 billion",
+        "key_areas": ["Azure Cloud", "OpenAI Partnership", "Copilot Agents"],
+        "ceo": "Satya Nadella",
+        "stock_impact": "Lost $200 billion in market value after reporting weaker cloud growth",
+        "challenges": [
+            "Glitchy and costly Copilot agents",
+            "Slow enterprise adoption",
+            "ROI concerns",
+        ],
     },
-    "smart-assistant": {
-        "name": "Smart Home Assistant",
-        "price": 129.99,
-        "category": "Smart Home",
-        "stock": 45,
-        "description": "Voice-controlled smart assistant with advanced AI capabilities",
+    "alphabet": {
+        "name": "Alphabet (Google)",
+        "planned_investment_2025": "$75 billion",
+        "investment_2024": "$53 billion",
+        "key_areas": ["Gemini AI Models", "Cloud Infrastructure", "AI Research"],
+        "ceo": "Sundar Pichai",
+        "stock_impact": "8% drop, fifth-worst trading day in past decade",
+        "challenges": [
+            "Opaque usage metrics for Gemini",
+            "Integrating AI into search without cannibalizing ad revenue",
+        ],
     },
-    "ai-camera": {
-        "name": "AI-Powered Security Camera",
-        "price": 199.99,
-        "category": "Security",
-        "stock": 28,
-        "description": "Security camera with facial recognition and anomaly detection",
+    "amazon": {
+        "name": "Amazon",
+        "planned_investment_2025": "$100+ billion",
+        "investment_2024": "$77 billion",
+        "key_areas": ["AWS Data Centers", "AI Infrastructure", "Specialized Chips"],
+        "ceo": "Andy Jassy",
+        "stock_impact": "Fell 7% in after-hours trading after investment announcement",
+        "challenges": ["Distant ROI", "Significant capital expenditure"],
     },
-    "ml-toolkit": {
-        "name": "Machine Learning Developer Toolkit",
-        "price": 299.99,
-        "category": "Software",
-        "stock": 0,
-        "description": "Comprehensive software suite for machine learning development",
+    "meta": {
+        "name": "Meta",
+        "planned_investment_2025": "Hundreds of billions",
+        "investment_2024": "$40 billion",
+        "key_areas": ["AI for Ad Targeting", "Llama Models", "AI Infrastructure"],
+        "ceo": "Mark Zuckerberg",
+        "stock_impact": "Positive reception, shares rising despite increased spending",
+        "challenges": ["Regulatory scrutiny", "Competition in AI space"],
     },
-    "neural-headphones": {
-        "name": "Neural Adaptive Headphones",
-        "price": 249.99,
-        "category": "Audio",
-        "stock": 12,
-        "description": "Headphones that adapt to your listening preferences using neural networks",
+    "openai": {
+        "name": "OpenAI",
+        "planned_investment_2025": "$100 billion (with partners)",
+        "investment_2024": "Not publicly disclosed",
+        "key_areas": ["GPT Models", "AI Safety", "US Infrastructure"],
+        "ceo": "Sam Altman",
+        "stock_impact": "Private company, valued at $260 billion in recent talks",
+        "challenges": [
+            "Competition from open-source models",
+            "Regulatory concerns",
+            "Governance issues",
+        ],
     },
+    "deepseek": {
+        "name": "DeepSeek",
+        "planned_investment_2025": "Not publicly disclosed",
+        "investment_2024": "Not publicly disclosed",
+        "key_areas": ["R1 Reasoning Model", "Cost-efficient AI"],
+        "ceo": "Not specified",
+        "stock_impact": "Caused Nvidia shares to plunge 17%, erasing $600 billion in one day",
+        "challenges": [
+            "Limited access to advanced Nvidia GPUs",
+            "Competition from established players",
+        ],
+    },
+}
+
+# Define a database of AI investment metrics and trends
+INVESTMENT_METRICS = {
+    "big_tech_combined_2024": "$246 billion",
+    "big_tech_combined_2023": "$151 billion",
+    "projected_big_tech_2025": "$320+ billion",
+    "growth_rate_2023_to_2024": "63%",
+    "magnificent_seven_capex_growth": "40%",
+    "rest_of_sp500_capex_growth": "3.5%",
+    "magnificent_seven_profit_growth": "33%",
+    "rest_of_sp500_profit_growth": "5%",
 }
 
 
 @tool
-def check_product_stock(product_id: str) -> str:
-    """Check the stock availability of a product.
+def get_company_info(company_name: str) -> str:
+    """Get detailed information about a Big Tech company's AI investments.
 
     Args:
-        product_id: The ID of the product to check
+        company_name: The name of the company to look up
 
     Returns:
-        Information about the product stock
+        Detailed information about the company's AI investments
     """
-    product_id = product_id.lower().strip()
+    company_name = company_name.lower().strip()
 
-    if product_id in PRODUCT_DATABASE:
-        product = PRODUCT_DATABASE[product_id]
-        stock = product["stock"]
+    # Handle common variations
+    if company_name == "google":
+        company_name = "alphabet"
+    elif company_name == "facebook":
+        company_name = "meta"
 
-        if stock > 0:
-            return (
-                f"Product '{product['name']}' is in stock. Available quantity: {stock}."
-            )
-        else:
-            return f"Product '{product['name']}' is currently out of stock."
+    if company_name in COMPANY_DATABASE:
+        company = COMPANY_DATABASE[company_name]
+        return json.dumps(company, indent=2)
     else:
-        return f"Product with ID '{product_id}' not found in the database."
+        return f"Company '{company_name}' not found in the database. Available companies: {', '.join(COMPANY_DATABASE.keys())}"
 
 
 @tool
-def get_product_info(product_id: str) -> str:
-    """Get detailed information about a product.
+def compare_companies(company1: str, company2: str) -> str:
+    """Compare AI investments between two Big Tech companies.
 
     Args:
-        product_id: The ID of the product to look up
+        company1: The name of the first company
+        company2: The name of the second company
 
     Returns:
-        Detailed information about the product
+        Comparison of AI investments between the two companies
     """
-    product_id = product_id.lower().strip()
+    company1 = company1.lower().strip()
+    company2 = company2.lower().strip()
 
-    if product_id in PRODUCT_DATABASE:
-        product = PRODUCT_DATABASE[product_id]
-        return json.dumps(product, indent=2)
-    else:
-        return f"Product with ID '{product_id}' not found in the database."
+    # Handle common variations
+    if company1 == "google":
+        company1 = "alphabet"
+    elif company1 == "facebook":
+        company1 = "meta"
+
+    if company2 == "google":
+        company2 = "alphabet"
+    elif company2 == "facebook":
+        company2 = "meta"
+
+    if company1 not in COMPANY_DATABASE:
+        return f"Company '{company1}' not found in the database. Available companies: {', '.join(COMPANY_DATABASE.keys())}"
+
+    if company2 not in COMPANY_DATABASE:
+        return f"Company '{company2}' not found in the database. Available companies: {', '.join(COMPANY_DATABASE.keys())}"
+
+    comp1 = COMPANY_DATABASE[company1]
+    comp2 = COMPANY_DATABASE[company2]
+
+    comparison = {
+        "comparison": {
+            "name": [comp1["name"], comp2["name"]],
+            "planned_investment_2025": [
+                comp1["planned_investment_2025"],
+                comp2["planned_investment_2025"],
+            ],
+            "investment_2024": [comp1["investment_2024"], comp2["investment_2024"]],
+            "key_areas": [comp1["key_areas"], comp2["key_areas"]],
+            "ceo": [comp1["ceo"], comp2["ceo"]],
+            "stock_impact": [comp1["stock_impact"], comp2["stock_impact"]],
+            "challenges": [comp1["challenges"], comp2["challenges"]],
+        }
+    }
+
+    return json.dumps(comparison, indent=2)
 
 
 @tool
-def search_products_by_category(category: str) -> str:
-    """Search for products in a specific category.
-
-    Args:
-        category: The category to search for
+def get_investment_metrics() -> str:
+    """Get overall metrics about Big Tech AI investments.
 
     Returns:
-        List of products in the specified category
+        Overall metrics and trends in Big Tech AI investments
     """
-    category = category.lower().strip()
-
-    matching_products = {}
-    for product_id, product in PRODUCT_DATABASE.items():
-        if product["category"].lower() == category:
-            matching_products[product_id] = product
-
-    if matching_products:
-        return json.dumps(matching_products, indent=2)
-    else:
-        return f"No products found in category '{category}'."
+    return json.dumps(INVESTMENT_METRICS, indent=2)
 
 
 def create_tool_calling_agent():
     """Create a Tool-Calling Agent (Single-Step)
 
-    This agent can call a single tool (API, DB, etc.) in one step.
+    This agent can call a single tool in one step.
     No planning or context memory.
-    Example: "Check stock for product X."
+    Suitable for: simple information retrieval, database queries, etc.
     """
     agent = Agent(
-        name="Product Information Agent",
+        name="AI Investment Information Agent",
         model=OpenAIChat(id="gpt-3.5-turbo"),
         # No knowledge base
         # No memory
-        tools=[check_product_stock, get_product_info, search_products_by_category],
+        tools=[get_company_info, compare_companies, get_investment_metrics],
         instructions=[
-            "You are a product information assistant for an AI technology store.",
-            "You can help customers check product stock, get product information, and search for products by category.",
-            "Use the appropriate tool based on the customer's request:",
-            "- Use check_product_stock to check if a product is available and how many are in stock",
-            "- Use get_product_info to get detailed information about a specific product",
-            "- Use search_products_by_category to find products in a specific category",
-            "You can only use one tool per request - no multi-step processes.",
-            "If a customer asks about a product, try to determine the product ID from our database:",
-            "- laptop-ai-pro: AI Pro Laptop",
-            "- smart-assistant: Smart Home Assistant",
-            "- ai-camera: AI-Powered Security Camera",
-            "- ml-toolkit: Machine Learning Developer Toolkit",
-            "- neural-headphones: Neural Adaptive Headphones",
-            "If the customer doesn't specify a product ID, ask them to clarify which product they're interested in.",
+            "You are an AI investment information agent specializing in Big Tech AI investments.",
+            "You can answer questions about AI investments by Big Tech companies.",
+            "You can provide information about specific companies like Microsoft, Google, Amazon, Meta, etc.",
+            "You can compare AI investments between different companies.",
+            "You can provide overall metrics about Big Tech AI investments.",
+            "Use the appropriate tool to answer the user's question.",
+            "For company-specific information, use the get_company_info tool.",
+            "For comparing two companies, use the compare_companies tool.",
+            "For overall investment metrics, use the get_investment_metrics tool.",
+            "Always explain the information you provide in a clear and concise manner.",
+            "If you don't have a tool to answer a specific question, just say so.",
         ],
         markdown=True,
         show_tool_calls=True,
@@ -160,13 +220,13 @@ def main():
     print("\n=== Tool-Calling Agent Demo ===")
     print("This demo shows an agent that can call a single tool in one step.")
     print("No planning or context memory.")
-    print("Suitable for: simple information retrieval, checking status, etc.")
+    print("Suitable for: simple information retrieval, database queries, etc.")
     print("\nExample requests:")
-    print("- 'Check stock for the AI Pro Laptop'")
-    print("- 'Tell me about the Smart Home Assistant'")
-    print("- 'What products do you have in the Audio category?'")
-    print("- 'Is the Machine Learning Developer Toolkit available?'")
-    print("- 'Give me details about the neural headphones'")
+    print("- 'Tell me about Microsoft's AI investments'")
+    print("- 'Compare Google and Meta's AI investments'")
+    print("- 'What are the overall metrics for Big Tech AI investments?'")
+    print("- 'How much is Amazon planning to invest in AI in 2025?'")
+    print("- 'What are the challenges Microsoft faces with its AI investments?'")
 
     # Run the agent
     while True:
