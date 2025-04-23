@@ -39,7 +39,7 @@ def ask_question(question):
     """Ask a question using the Agno agent with RAG"""
     # Set up the knowledge base
     knowledge_base = setup_knowledge_base()
-    
+
     # Set up the agent
     agent = Agent(
         model=OpenAIChat(id="gpt-3.5-turbo"),
@@ -57,7 +57,7 @@ def ask_question(question):
         markdown=True,
         show_tool_calls=True,
     )
-    
+
     # Use the agent to answer the question
     agent.print_response(question, stream=True)
 
@@ -85,7 +85,9 @@ def main():
         # Use the agent to answer the question
         if question.lower() in ["summarize", "summary"]:
             # For summarize questions, provide more context
-            ask_question("Summarize the information about Big Tech's AI investments and spending")
+            ask_question(
+                "Summarize the information about Big Tech's AI investments and spending"
+            )
         else:
             ask_question(question)
 

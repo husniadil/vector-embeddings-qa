@@ -76,39 +76,39 @@ def human_confirmation_hook(fc: FunctionCall):
 @tool(pre_hook=human_confirmation_hook)
 def get_human_input(question: str) -> str:
     """Ask the human for input or clarification.
-    
+
     Args:
         question (str): The question to ask the human
-        
+
     Returns:
         str: The human's response
     """
     # Get the live display instance from the console
     live = console._live
-    
+
     # Stop the live display temporarily
     if live:
         live.stop()  # type: ignore
-    
+
     # Ask the human for input
     console.print(f"\n[bold green]AI is asking:[/] {question}")
     response = Prompt.ask("Your response")
-    
+
     # Restart the live display
     if live:
         live.start()  # type: ignore
-    
+
     return response
 
 
 @tool(pre_hook=human_confirmation_hook)
 def analyze_investment_data(company: str, investment_amount: str) -> str:
     """Analyze investment data for a specific company.
-    
+
     Args:
         company (str): The name of the company to analyze
         investment_amount (str): The investment amount to analyze
-        
+
     Returns:
         str: Analysis of the investment data
     """
@@ -120,9 +120,9 @@ def analyze_investment_data(company: str, investment_amount: str) -> str:
         "risk_level": "medium to high",
         "potential_roi": "15-20% over 3 years",
         "market_impact": "Significant potential to reshape the AI infrastructure landscape",
-        "competitive_analysis": "Leading position against similar investments from competitors"
+        "competitive_analysis": "Leading position against similar investments from competitors",
     }
-    
+
     return json.dumps(analysis, indent=2)
 
 
@@ -150,7 +150,7 @@ def setup_agent_with_human_loop(knowledge_base):
         markdown=True,
         show_tool_calls=True,
     )
-    
+
     return agent
 
 
@@ -172,15 +172,19 @@ def main():
     agent = setup_agent_with_human_loop(knowledge_base)
 
     print("\n=== Human-in-the-Loop Demo ===")
-    print("This demo shows how an AI agent can interact with both a knowledge base and a human.")
-    print("The agent will search the knowledge base for information, but can also ask you for")
+    print(
+        "This demo shows how an AI agent can interact with both a knowledge base and a human."
+    )
+    print(
+        "The agent will search the knowledge base for information, but can also ask you for"
+    )
     print("clarification or additional details when needed.")
     print("Try asking complex questions that might require clarification or follow-up.")
     print("Example: 'What are the potential risks of these AI investments?'")
     print("Example: 'How do these investments compare to historical tech spending?'")
     print("Example: 'What's the expected ROI timeline for these companies?'")
     print("Example: 'Analyze Amazon's $100 billion investment'")
-    
+
     # Example usage of question answering with human in the loop
     while True:
         question = input("\nEnter your question (or 'quit' to exit): ")
